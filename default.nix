@@ -5,16 +5,15 @@
   stdenv ? pkgs.stdenv,
   crane,
   fenix,
-  flake-utils,
   ...
 }: let
   # fenix: rustup replacement for reproducible builds
   toolchain = fenix.${system}.fromToolchainFile {
     file = ./rust-toolchain.toml;
-    sha256 = "sha256-opUgs6ckUQCyDxcB9Wy51pqhd0MPGHUVbwRKKPGiwZU=";
+    sha256 = "sha256-yMuSb5eQPO/bHv+Bcf/US8LVMbf/G/0MSfiPwBhiPpk=";
   };
   # crane: cargo and artifacts manager
-  craneLib = crane.${system}.overrideToolchain toolchain;
+  craneLib = crane.overrideToolchain toolchain;
 
   nativeBuildInputs = with pkgs; [
     worker-build
@@ -27,13 +26,7 @@
     openssl
     pkg-config
     autoPatchelfHook
-  ]
-  ++ lib.optionals stdenv.buildPlatform.isDarwin [
-    pkgs.libiconv
   ];
-  # ++ lib.optionals stdenv.buildPlatform.isLinux [
-  #   pkgs.libxkbcommon.dev
-  # ];
 
   worker = craneLib.buildPackage {
     doCheck = false;
@@ -58,6 +51,5 @@ in
   # `nix develop`
   devShells.default = craneLib.devShell {
     buildInputs = nativeBuildInputs ++ buildInputs;
-    # pkgs.nodePackages.wrangler
   };
 }

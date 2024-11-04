@@ -18,10 +18,10 @@
   # Iterate over Arm, x86 for MacOs 🍎 and Linux 🐧
     flake-utils.lib.eachSystem (flake-utils.lib.defaultSystems) (
       system: let
+        pkgs = nixpkgs.legacyPackages.${system};
         bundle = import ./. {
-          inherit system flake-utils;
-          pkgs = nixpkgs.legacyPackages.${system};
-          crane = inputs.crane.lib;
+          inherit pkgs system flake-utils;
+          crane = inputs.crane.mkLib pkgs;
           fenix = inputs.fenix.packages;
         };
       in {
