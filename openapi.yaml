@@ -1,0 +1,378 @@
+openapi: 3.0.3
+info:
+  title: Q-rs
+  description: Endpoints para q-rs.
+  version: 1.0.0
+tags:
+  - name: Authentication
+    description: Endpoints relacionados con el inicio y cierre de sesión.
+  - name: Links
+    description: Endpoints relacionados con creación y manejo de enlaces.
+paths:
+  /login:
+    post:
+      tags:
+        - Authentication
+      summary: Iniciar sesión
+      description: Permite autenticar al usuario mediante email y contraseña. Si se requiere MFA, se indica en la respuesta.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  example: user@example.com
+                password:
+                  type: string
+                  example: securepassword
+                mfa:
+                  type: integer
+                  nullable: true
+                  example: null
+      responses:
+        '204':
+          description: Completado. La sesión fue iniciada correctamente y se estableció una cookie de sesión.
+        '401':
+          description: Credenciales inválidas. El correo o contraseña no coinciden con un usuario registrado.
+        '400':
+          description: Se requiere autenticación 2FA.
+
+  /logout:
+    get:
+      tags:
+        - Authentication
+      summary: Cerrar sesión
+      description: Permite al usuario cerrar su sesión activa.
+      responses:
+        '204':
+          description: Sesión cerrada correctamente.
+        '401':
+          description: No hay una sesión activa.
+
+  /signup:
+    post:
+      tags:
+        - Authentication
+      summary: Crear cuenta
+      description: Permite a un usuario registrarse proporcionando un nombre de usuario, correo electrónico y contraseña.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                  example: new_user
+                email:
+                  type: string
+                  example: user@example.com
+                password:
+                  type: string
+                  example: securepassword
+      responses:
+        '204':
+          description: Usuario creado exitosamente.
+        '403':
+          description: El usuario ya existe.
+        '400':
+          description: El cuerpo de la solicitud no contiene todos los campos requeridos.
+  /links:
+    get:
+      tags:
+        - Links
+      summary: Obtener enlaces.
+      description: Permite Obtener todos los enlaces creads por el usuario.
+      responses:
+        '200':
+          description: Links recuperados exitosamente.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                      id:
+                        type: integer
+                        example: 2382
+                      slug:
+                        type: string
+                        example: abcdef
+                      content:
+                        oneOf:
+                          - type: array
+                            example:
+                              - https://rustlang.org
+                              - https://rustlang-es.org
+    
+                          - type: string
+                            example: https://rustlang-es.org
+                      created_at:
+                        type: integer
+                        example: 1732289376
+                      modified_at:
+                        type: integer
+                        nullable: true
+                        example: 1732289376
+                      campaign:
+                        type: string
+                        nullable: true
+                        example: event2025
+                      tags:
+                        type: array
+                        nullable: true
+                        items:
+                          type: string
+                        example:
+                          - events
+                          - "2025"
+                          - upcoming
+
+        '401':
+          description: No hay una sesión activa
+  
+    put:
+      tags: 
+        - Links
+      summary: Crea un nuevo enlace.
+      description: Permite crear un nuevo enlace con un slug aleatorio.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                content:
+                  oneOf:
+                    - type: string
+                      format: string
+                      description: Un único enlace.
+                      example: https://rustlang-es.org
+                    - type: array
+                      items:
+                        type: string
+                        format: string
+                      description: Una lista de enlaces.
+                      example: 
+                        - https://rustlang.org
+                        - https://rustlang-es.org
+                tags:
+                  type: array
+                  items:
+                    type: string
+                    format: string
+                  description: array of tag names
+                  nullable: true
+                  example: 
+                    - tag1
+                    - tag2
+                
+                campaign:
+                  type: string
+                  description: campaign name
+                  nullable: true
+                  example: event2025
+
+      responses:
+        '200':
+          description: Link creado exitosamente.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                    message:
+                      type: string
+                      example: Link created
+                    slug:
+                      type: string
+                      example: abcdef
+                    created_at:
+                      type: integer
+                      example: 1732289376
+        '401':
+          description: No hay una sesión activa
+  
+  /links/{slug}:
+    parameters:
+      - name: slug
+        in: path
+        required: true
+        description: El identificador único del enlace.
+        schema:
+          type: string
+    get:
+      tags:
+        - Links
+      summary: Obtener links
+      description: Permite Obtener todos los enlaces creads por el usuario.
+      responses:
+        '200':
+          description: Link creado exitosamente.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                    id:
+                      type: integer
+                      example: 2382
+                    content:
+                      oneOf:
+                        - type: array
+                          example:
+                            - https://rustlang.org
+                            - https://rustlang-es.org
+  
+                        - type: string
+                          example: https://rustlang-es.org
+                    created_at:
+                      type: integer
+                      example: 1732289376
+                    modified_at:
+                      type: integer
+                      nullable: true
+                      example: 1732289376
+                    campaign:
+                      type: string
+                      nullable: true
+                      example: event2025
+                    tags:
+                      type: array
+                      nullable: true
+                      items:
+                        type: string
+                      example:
+                        - events
+                        - "2025"
+                        - upcoming
+        '401':
+          description: No hay una sesión activa.
+        '403':
+          description: El enlace no pertenece al usuario actual.
+        '404':
+          description: El enlace no existe.
+    
+    post:
+      tags:
+        - Links
+      summary: Crear enlace con slug personalizado.
+      description: Permite crear enlaces con un slug personalizado.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                content:
+                  oneOf:
+                    - type: string
+                      format: string
+                      description: Un único enlace.
+                      example: https://rustlang-es.org
+                    - type: array
+                      items:
+                        type: string
+                        format: string
+                      description: Una lista de enlaces.
+                      example: 
+                        - https://rustlang.org
+                        - https://rustlang-es.org
+                tags:
+                  type: array
+                  items:
+                    type: string
+                    format: string
+                  description: array of tag names
+                  nullable: true
+                  example: 
+                    - tag1
+                    - tag2
+                
+                campaign:
+                  type: string
+                  description: campaign name
+                  nullable: true
+                  example: event2025
+      responses:
+        '201':
+          description: Enlace creado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                    message:
+                      type: string
+                      example: Link created
+                    slug:
+                      type: string
+                      example: abcdef
+                    created_at:
+                      type: integer
+                      example: 1732289376
+        '401':
+          description: No hay una sesión activa.
+        '409':
+          description: Ya existe.
+    
+    patch:
+      tags: 
+        - Links
+      summary: Edita un enlace
+      description: Permite modificar un enlace
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                content:
+                  oneOf:
+                    - type: string
+                      format: string
+                      description: Un único enlace.
+                      nullable: true
+                      example: https://rustlang-es.org
+                    - type: array
+                      items:
+                        type: string
+                        format: string
+                      description: Una lista de enlaces.
+                      nullable: true
+                      example: 
+                        - https://rustlang.org
+                        - https://rustlang-es.org
+                tags:
+                  type: array
+                  items:
+                    type: string
+                    format: string
+                  description: array of tag names
+                  nullable: true
+                  example: 
+                    - tag1
+                    - tag2
+                
+                campaign:
+                  type: string
+                  description: campaign name
+                  nullable: true
+                  example: event2025
+      responses:
+        '204':
+          description: Modificado.
+        '401':
+          description: No hay una sesión activa.
+        '403':
+          description: El enlace no pertenece al usuario actual.
+        '404':
+          description: El enlace no existe.
