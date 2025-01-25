@@ -2,12 +2,16 @@ openapi: 3.0.3
 info:
   title: Q-rs
   description: Endpoints para q-rs.
-  version: 1.0.0
+  version: 1.0.1
 tags:
   - name: Authentication
     description: Endpoints relacionados con el inicio y cierre de sesión.
+  - name: Accounts
+    description: Endpoints relacionados con el manejo de cuentas y perfiles
   - name: Links
     description: Endpoints relacionados con creación y manejo de enlaces.
+  - name: Campaigns
+    description: Endpoints relacionados con el manejo de campañas.
 paths:
   /login:
     post:
@@ -81,12 +85,162 @@ paths:
           description: El usuario ya existe.
         '400':
           description: El cuerpo de la solicitud no contiene todos los campos requeridos.
+
+  /account/settings:
+    get:
+      tags:
+        - Accounts
+      summary: Obtener configuración de la cuenta
+      description: Devuelve la configuración actual de la cuenta del usuario.
+      responses:
+        '200':
+          description: Configuración de la cuenta obtenida correctamente.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  username:
+                    type: string
+                    example: sergio_ribera
+                  email:
+                    type: string
+                    example: sergio@rustlang-es.org
+                  language:
+                    type: string
+                    example: "es-ES"
+                  notifications:
+                    type: boolean
+                    example: true
+        '401':
+          description: No hay una sesión activa.
+
+    put:
+      tags:
+        - Accounts
+      summary: Editar configuración de la cuenta
+      description: Actualiza la configuración de la cuenta del usuario.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                language:
+                  type: string
+                  example: "es-ES"
+                notifications:
+                  type: boolean
+                  example: true
+      responses:
+        '204':
+          description: Configuración actualizada correctamente.
+        '401':
+          description: No hay una sesión activa.
+
+  /account/profile:
+    patch:
+      tags:
+        - Accounts
+      summary: Actualizar datos personales
+      description: Permite al usuario actualizar su información personal como nombre o correo electrónico.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                  example: "sergio_ribera"
+                email:
+                  type: string
+                  example: "sergio@rustlang-es.org"
+      responses:
+        '204':
+          description: Perfil modificado correctamente.
+        '401':
+          description: No hay una sesión activa.
+
+  /account/profile/avatar:
+    post:
+      tags:
+        - Accounts
+      summary: "Actualiza tu avatar de perfil"
+      description: "Permite al usuario cargar una nueva imagen de avatar para su perfil."
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                avatar:
+                  type: string
+                  format: binary
+                  description: "Selecciona y carga una imagen para actualizar tu avatar."
+      responses:
+        '204':
+          description: Avatar modificado correctamente.
+        '401':
+          description: No hay una sesión activa.
+
+  /account/password:
+    put:
+      tags:
+        - Accounts
+      summary: Cambiar contraseña
+      description: Cambia la contraseña del usuario.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                currentPassword:
+                  type: string
+                newPassword:
+                  type: string
+      responses:
+        '204':
+          description: Contraseña actualizada.
+        '401':
+          description: No hay una sesión activa.
+        '403':
+          description: Contraseña incorrecta.
+
+  /account/deactivate:
+    post:
+      tags:
+        - Accounts
+      summary: Desactivar cuenta
+      description: Desactiva la cuenta del usuario con 30 días de antelación antes de proceder con su eliminación definitiva.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                password:
+                  type: string
+      responses:
+        '204':
+          description: Cuenta desactivada.
+        '401':
+          description: No hay una sesión activa.
+        '403':
+          description: Contraseña incorrecta.
+
+
   /links:
     get:
       tags:
         - Links
       summary: Obtener enlaces.
-      description: Permite Obtener todos los enlaces creads por el usuario.
+      description: Permite obtener todos los enlaces creados por el usuario.
       responses:
         '200':
           description: Links recuperados exitosamente.
@@ -109,7 +263,6 @@ paths:
                             example:
                               - https://rustlang.org
                               - https://rustlang-es.org
-    
                           - type: string
                             example: https://rustlang-es.org
                       created_at:
@@ -135,11 +288,11 @@ paths:
 
         '401':
           description: No hay una sesión activa
-  
+
     put:
       tags: 
         - Links
-      summary: Crea un nuevo enlace.
+      summary: Crear un nuevo enlace.
       description: Permite crear un nuevo enlace con un slug aleatorio.
       requestBody:
         required: true
@@ -167,15 +320,14 @@ paths:
                   items:
                     type: string
                     format: string
-                  description: array of tag names
+                  description: array de nombres de etiquetas
                   nullable: true
                   example: 
                     - tag1
                     - tag2
-                
                 campaign:
                   type: string
-                  description: campaign name
+                  description: Nombre de la campaña
                   nullable: true
                   example: event2025
 
@@ -198,7 +350,7 @@ paths:
                       example: 1732289376
         '401':
           description: No hay una sesión activa
-  
+
   /links/{slug}:
     parameters:
       - name: slug
@@ -210,11 +362,11 @@ paths:
     get:
       tags:
         - Links
-      summary: Obtener links
-      description: Permite Obtener todos los enlaces creads por el usuario.
+      summary: Obtener enlace por slug
+      description: Permite obtener un enlace específico utilizando su slug.
       responses:
         '200':
-          description: Link creado exitosamente.
+          description: Link recuperado exitosamente.
           content:
             application/json:
               schema:
@@ -229,7 +381,6 @@ paths:
                           example:
                             - https://rustlang.org
                             - https://rustlang-es.org
-  
                         - type: string
                           example: https://rustlang-es.org
                     created_at:
@@ -258,7 +409,7 @@ paths:
           description: El enlace no pertenece al usuario actual.
         '404':
           description: El enlace no existe.
-    
+
     post:
       tags:
         - Links
@@ -290,15 +441,14 @@ paths:
                   items:
                     type: string
                     format: string
-                  description: array of tag names
+                  description: array de nombres de etiquetas
                   nullable: true
                   example: 
                     - tag1
                     - tag2
-                
                 campaign:
                   type: string
-                  description: campaign name
+                  description: Nombre de la campaña
                   nullable: true
                   example: event2025
       responses:
@@ -322,12 +472,12 @@ paths:
           description: No hay una sesión activa.
         '409':
           description: Ya existe.
-    
+
     patch:
       tags: 
         - Links
-      summary: Edita un enlace
-      description: Permite modificar un enlace
+      summary: Editar un enlace
+      description: Permite modificar un enlace existente
       requestBody:
         required: true
         content:
@@ -356,15 +506,14 @@ paths:
                   items:
                     type: string
                     format: string
-                  description: array of tag names
+                  description: array de nombres de etiquetas
                   nullable: true
                   example: 
                     - tag1
                     - tag2
-                
                 campaign:
                   type: string
-                  description: campaign name
+                  description: Nombre de la campaña
                   nullable: true
                   example: event2025
       responses:
@@ -376,3 +525,203 @@ paths:
           description: El enlace no pertenece al usuario actual.
         '404':
           description: El enlace no existe.
+
+    delete:
+      tags:
+        - Links
+      summary: Eliminar un enlace
+      description: Permite eliminar un enlace existente utilizando su slug.
+      responses:
+        '204':
+          description: Enlace eliminado exitosamente.
+        '401':
+          description: No hay una sesión activa.
+        '403':
+          description: El enlace no pertenece al usuario actual.
+        '404':
+          description: El enlace no existe.
+
+  /campaigns:
+    get:
+      tags:
+        - Campaigns
+      summary: Obtener campañas
+      description: Permite recuperar todas las campañas creadas por el usuario.
+      responses:
+        '200':
+          description: Campañas recuperadas exitosamente.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                      id:
+                        type: integer
+                        example: 1
+                      name:
+                        type: string
+                        example: "event2025"
+                      links:
+                        type: array
+                        items:
+                          type: string
+                          example: "abcdef"
+                      created_at:
+                        type: integer
+                        example: 1732289376
+                      modified_at:
+                        type: integer
+                        nullable: true
+                        example: 1732289376
+                      ends_at:
+                        type: integer
+                        nullable: true
+                        example: 1732289376
+        '401':
+          description: No hay una sesión activa.
+
+    put:
+      tags:
+        - Campaigns
+      summary: Crear campaña
+      description: Permite crear una nueva campaña.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: Nombre de la campaña.
+                  example: event2025
+                ends_at:
+                  type: integer
+                  description: Fecha de finalización (timestamp).
+                  nullable: true
+                  example: 1732289376
+      responses:
+        '204':
+          description: Campaña creada exitosamente.
+        '401':
+          description: No hay una sesión activa.
+
+  /campaigns/{name}:
+    parameters:
+      - name: name
+        in: path
+        required: true
+        description: El nombre único de la campaña.
+        schema:
+          type: string
+    get:
+      tags:
+        - Campaigns
+      summary: Obtener campaña
+      description: Permite obtener una campaña específica utilizando su nombre.
+      responses:
+        '200':
+          description: Campaña recuperada exitosamente.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                    id:
+                      type: integer
+                      example: 1
+                    name:
+                      type: string
+                      example: "event2025"
+                    links:
+                      type: array
+                      items:
+                        type: string
+                        example: "abcdef"
+                    created_at:
+                      type: integer
+                      example: 1732289376
+                    modified_at:
+                      type: integer
+                      nullable: true
+                      example: 1732289376
+                    ends_at:
+                      type: integer
+                      nullable: true
+                      example: 1732289376
+        '401':
+          description: No hay una sesión activa.
+        '404':
+          description: La campaña especificada no existe.
+
+    patch:
+      tags:
+        - Campaigns
+      summary: Editar campaña
+      description: Permite modificar una campaña existente.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: Nuevo nombre de la campaña.
+                  example: event2026
+                ends_at:
+                  type: integer
+                  description: Nueva fecha de finalización (timestamp).
+                  nullable: true
+                  example: 1732289380
+      responses:
+        '200':
+          description: Campaña modificada exitosamente.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                    id:
+                      type: integer
+                      example: 1
+                    name:
+                      type: string
+                      example: "event2026"
+                    links:
+                      type: array
+                      items:
+                        type: string
+                        example: "abcdef"
+                    created_at:
+                      type: integer
+                      example: 1732289376
+                    modified_at:
+                      type: integer
+                      nullable: true
+                      example: 1732289376
+                    ends_at:
+                      type: integer
+                      nullable: true
+                      example: 1732289376
+        '401':
+          description: No hay una sesión activa.
+        '404':
+          description: La campaña especificada no existe.
+    
+    delete:
+      tags:
+        - Campaigns
+      summary: Eliminar una campaña
+      description: Permite eliminar una campaña existente utilizando su nombre único. Esta operación es irreversible.
+      responses:
+        '204':
+          description: Campaña eliminada exitosamente.
+        '401':
+          description: No hay una sesión activa.
+        '404':
+          description: La campaña especificada no existe.
